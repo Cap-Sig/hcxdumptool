@@ -1,6 +1,8 @@
 hcxdumptool
 ==============
 
+THIS IS THE FORK FOR HCX-PI SETUP.  IT IS THE VERSION REFERENCED IN THE GUIDE: https://cap-sig.com/hcx-pi-v1/
+
 Small tool to capture packets from wlan devices.
 After capturing, upload the "uncleaned" cap here (https://wpa-sec.stanev.org/?submit)
 to see if your ap or the client is vulnerable by using common wordlists.

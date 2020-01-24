@@ -56,10 +56,12 @@ Requirements
 
 * Chipset must be able to run in monitor mode and driver must support monitor mode. Recommended: MEDIATEK (MT7601) or RALINK (RT2870, RT3070, RT5370) chipset 
 
+* libopenssl and openssl-dev installed
+
 * Raspberry Pi A, B, A+, B+, Zero (WH). (Recommended: Zero (WH) or A+, because of a very low power consumption), but notebooks and desktops may work, too.
 
 * GPIO hardware mod recommended (push button and LED).
- 
+
 
 Adapters
 --------------
@@ -76,15 +78,13 @@ Manufacturers do change chipsets without changing model numbers. Sometimes they 
 
 This list is for information purposes only and should not be regarded as a binding presentation of the products:
 
-| VENDOR MODEL         | ID                                                                               |
-| -------------------- | -------------------------------------------------------------------------------- |
-| EDIMAX EW-7711UAN    | ID 7392:7710 Edimax Technology Co., Ltd                                          |
-| ALLNET ALL-WA0150N   | ID 148f:7601 Ralink Technology, Corp. MT7601U Wireless Adapter                   |
-| SEMPRE WU150-1       | ID 148f:7601 Ralink Technology, Corp. MT7601U Wireless Adapter                   |
-| TENDA W311U+         | ID 148f:3070 Ralink Technology, Corp. RT2870/RT3070 Wireless Adapter             |
-| TP-LINK TL-WN722N v1 | ID 0cf3:9271 Qualcomm Atheros Communications AR9271 802.11n                      |
-| ALFA AWUS036H        | ID 0bda:8187 Realtek Semiconductor Corp. RTL8187 Wireless Adapter                |
-| RTL8821AE            | Realtek Semiconductor Co., Ltd. RTL8821AE 802.11ac PCIe Wireless Network Adapter |
+| VENDOR MODEL         | ID                                                                                |
+| -------------------- | --------------------------------------------------------------------------------- |
+| EDIMAX EW-7711UAN    | ID 7392:7710 Edimax Technology Co., Ltd                                           |
+| ALLNET ALL-WA0150N   | ID 148f:7601 Ralink Technology, Corp. MT7601U Wireless Adapter                    |
+| SEMPRE WU150-1       | ID 148f:7601 Ralink Technology, Corp. MT7601U Wireless Adapter                    |
+| TP-LINK Archer T2UH  | ID 148f:761a Ralink Technology, Corp. MT7610U ("Archer T2U" 2.4G+5G WLAN Adapter) |
+| TENDA W311U+         | ID 148f:3070 Ralink Technology, Corp. RT2870/RT3070 Wireless Adapter              |
 
 Always verify the actual chipset with 'lsusb' and/or 'lspci'!
 
@@ -109,6 +109,15 @@ The best high frequency amplifier is a good antenna!
 | TP-LINK TL-ANT2409 A   | panel           |
 
 
+GPS devices
+--------------
+
+| VENDOR MODEL                | TYPE            |
+| --------------------------- | --------------- |
+| NAVILOCK NL-701US           | USB             |
+| JENTRO BT-GPS-8 activepilot | BLUETOOTH       |
+
+
 Useful scripts
 --------------
 
@@ -128,7 +137,7 @@ LED flashes 5 times if hcxdumptool successfully started
 
 LED flashes every 5 seconds if everything is fine and signals are received
 
-LED turns on, if no signal received during the last past 5 seconds
+LED flashes twice, if no signal received during the last past 5 seconds
 
 Press push button at least > 5 seconds until LED turns on (also LED turns on if hcxdumptool terminates)
 
@@ -170,13 +179,31 @@ to determine which access points are in attack range.
 pcapng option codes (Section Header Block)
 --------------
 
-OPTIONCODE_MACMYAP     62107 (6 byte)
+ENTERPRISE NUMBER        0x2a, 0xce, 0x46, 0xa1
 
-OPTIONCODE_RC          62108 (8 byte)
+MAGIC NUMBER             0x2a, 0xce, 0x46, 0xa1, 0x79, 0xa0, 0x72, 0x33,
 
-OPTIONCODE_ANONCE      62109 (32 byte)
+                         0x83, 0x37, 0x27, 0xab, 0x59, 0x33, 0xb3, 0x62,
 
-OPTIONCODE_MACMYSTA    62110 (6 byte)
+                         0x45, 0x37, 0x11, 0x47, 0xa7, 0xcf, 0x32, 0x7f,
+
+                         0x8d, 0x69, 0x80, 0xc0, 0x89, 0x5e, 0x5e, 0x98
+
+OPTIONCODE_MACMYORIG     0xf29a (6 byte)
+
+OPTIONCODE_MACMYAP       0xf29b (6 byte)
+
+OPTIONCODE_RC            0xf29c (8 byte)
+
+OPTIONCODE_ANONCE        0xf29d (32 byte)
+
+OPTIONCODE_MACMYSTA      0xf29e (6 byte)
+
+OPTIONCODE_SNONCE        0xf29f (32 byte)
+
+OPTIONCODE_WEAKCANDIDATE 0xf2a0 (32 byte)
+
+OPTIONCODE_GPS           0xf2a1 (max 128 byte)
 
 
 Warning

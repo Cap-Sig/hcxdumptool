@@ -1,3 +1,155 @@
+11.12.2019
+==========
+moved to v6.0.0
+hcxdumptool: complete rewrite from scratch
+             filterlist splitted (APs, CLIENTs), entries increased upt to 256 each list:
+             --filterlist_ap
+             --filterlist_client
+             improved real time display:
+              driver information and firmware information (if available)
+              detailed information about PMKID and MESSAGE PAIR)
+              allow more than one option (--enable_status)
+                 0: no status (default)
+                 1: EAPOL
+                 2: PROBE REQUEST/PROBE RESPONSE
+                 4: AUTHENTICATON
+                 8: ASSOCIATION/REASSOCIATION
+                16: BEACON
+                32: GPS (once a minute)
+                64: internal status
+               128: send status to client
+             choose pcapng frames to save (-f) using option -o
+             improved rca_scan:
+              0: no real time display
+              1: show only access points in range (default)
+              2: show only access points not range
+              3: show all access points
+             improved GPS handling:
+              read GPS information directly from device
+              --use_gps_device=<device>
+              or us GPSD
+              --use_gpsd 
+              use full standard NMEA raw sentence $GPGGA, $GPRMC, $GPGWL
+              this version need hcxpcaptool v6.0.0 to convert GPS information or gpsbabel
+              gpsbabel  -i nmea -f nmea.txt -o gpx -F test.gpx
+              then open test.gpx with viking (layer -> waypoint -> BSSID) 
+             ignore M4 if SNONCE is zeroed
+             ignore PMKID if zeroed
+             improved handling of radiatapheader on ath9k_htc driver
+             new option codes:
+              ENTERPRISE NUMBER        0x2a, 0xce, 0x46, 0xa1
+              MAGIC NUMBER             0x2a, 0xce, 0x46, 0xa1, 0x79, 0xa0, 0x72, 0x33,
+                                       0x83, 0x37, 0x27, 0xab, 0x59, 0x33, 0xb3, 0x62,
+                                       0x45, 0x37, 0x11, 0x47, 0xa7, 0xcf, 0x32, 0x7f,
+                                       0x8d, 0x69, 0x80, 0xc0, 0x89, 0x5e, 0x5e, 0x98
+              OPTIONCODE_MACMYORIG     0xf29a (6 byte)
+              OPTIONCODE_MACMYAP       0xf29b (6 byte)
+              OPTIONCODE_RC            0xf29c (8 byte)
+              OPTIONCODE_ANONCE        0xf29d (32 byte)
+              OPTIONCODE_MACMYSTA      0xf29e (6 byte)
+              OPTIONCODE_SNONCE        0xf29f (32 byte)
+              OPTIONCODE_WEAKCANDIDATE 0xf2a0 (32 byte)
+              OPTIONCODE_GPS           0xf2a1 (max 128 byte)
+             removed weak candidate check, because it leads to many, many unauthorized MP:M1M2
+
+hcxpioff: new options --tot, --poweroff, --reboot
+--tot=<digit>  : enable timeout timer in minutes (minimum = 2 minutes)
+               : hcxpioff will terminate if tot reached
+--reboot       : once hcxpioff terminated, reboot system
+
+
+20.09.2019
+==========
+hcxdumptool: added pcapng custom block
+             we store all custom information inside this block
+
+list of used pcapng option codes:
+#define OPTIONCODE_MACMYORIG		0xf29a
+#define OPTIONCODE_MACMYAP		0xf29b
+#define OPTIONCODE_RC			0xf29c
+#define OPTIONCODE_ANONCE		0xf29d
+#define OPTIONCODE_MACMYSTA		0xf29e
+#define OPTIONCODE_SNONCE		0xf29f
+#define OPTIONCODE_WEAKCANDIDATE	0xf2a0
+
+
+18.09.2019
+==========
+hcxdumptool: added new option --weak_candidate
+             added weak candidate detection on PMKID and WPA1
+             weak candidate is no longer "hard coded"
+---weak_candidate=<password>        : use this password (8...63 characters) for weak candidate alert
+                                     default: 00000000
+                                     affected: client-less attack
+
+list of used pcapng option codes:
+#define OPTIONCODE_MACMYAP		62107
+#define OPTIONCODE_RC			62108
+#define OPTIONCODE_ANONCE		62109
+#define OPTIONCODE_MACMYSTA		62110
+#define OPTIONCODE_SNONCE		62111
+#define OPTIONCODE_WEAKCANDIDATE	62112
+
+
+17.09.2019
+==========
+hcxdumptool: added weak password check
+             high experimental, only on WPA2 QOS
+             new dependency: lib crypto (openssl)
+
+
+07.09.2019
+==========
+hcxdumptool: added new options
+
+--reactive_beacon                  : send internal/external beacon on every received proberequest
+                                     affected: ap-less
+--flood_beacon=<digit>             : transmit internal/external beacon after every <x> received management packet
+                                     affected: ap-less
+
+
+05.09.2019
+==========
+hcxdumptool: added new options (feature request: https://github.com/ZerBea/hcxdumptool/issues/70)
+
+--disable_internal_beacons         : do not transmit beacons using received ESSIDs
+                                     default: transmit this kind of beacon once on channel change or every five seconds
+                                     affected: ap-less and reactive_beacon, flood_beacon
+--use_external_beaconlist=<file>   : transmit beacons from this list
+                                     maximum ESSID length 32, maximum entries 4095
+                                     default: transmit this kind of beacon once on channel change or every five seconds
+                                     affected: ap-less and reactive_beacon, flood_beacon
+
+
+28.08.2019
+==========
+moved to v5.2.2
+
+
+02.09.2019
+==========
+hcxdumptool : added bind() ll.sll_pkttype = PACKET_OTHERHOST | PACKET_OUTGOING
+              added setsockopt() r.mr_type = PACKET_MR_PROMISC
+
+now dmesg will show when device entered promiscuous mode
+during hcxdumptool initialization:
+[ 6313.657830] device wlp3s0f0u11u1 entered promiscuous mode
+
+and when it left promiscuous mode when hcxdumptool terminated:
+[ 6313.735833] device wlp3s0f0u11u1 left promiscuous mode
+
+
+01.09.2019
+==========
+hcxdumptool     : print additional information about interfering services
+first_steps.txt : added quickstart guide to docs
+
+
+28.08.2019
+==========
+moved to v5.2.1
+
+
 25.08.2019
 ==========
 hcxdumptool: removed option --ignore_warning (no longer needed)
@@ -21,7 +173,7 @@ warning:     on some drivers rtlXXXX netlink will not notice that we use forced 
 
 19.08.2019
 ==========
-move to v5.2.0
+moved to v5.2.0
 
 
 18.08.2019

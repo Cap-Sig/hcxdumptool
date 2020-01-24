@@ -5,25 +5,27 @@
 
 #include <net/if.h>
 
-#define SIOCGIWNAME 0x8b01
-#define SIOCSIWFREQ 0x8b04
-#define SIOCGIWFREQ 0x8b05
-#define SIOCSIWMODE 0x8b06
-#define SIOCGIWMODE 0x8b07
-#define	SIOCGIWTXPOW 0x8b27
+#define SIOCGIWNAME	0x8b01
+#define SIOCSIWFREQ	0x8b04
+#define SIOCGIWFREQ	0x8b05
+#define SIOCSIWMODE	0x8b06
+#define SIOCGIWMODE	0x8b07
+#define	SIOCGIWTXPOW	0x8b27
+#define SIOCSIWPOWER	0x8B2C
+#define SIOCGIWPOWER	0x8B2D
 
-#define IW_TXPOW_DBM 0x00
-#define IW_FREQ_FIXED 0x01
+#define IW_TXPOW_DBM	0x00
+#define IW_FREQ_FIXED	0x01
 
 
-#define IW_MODE_AUTO 0
-#define IW_MODE_ADHOC 1
-#define IW_MODE_INFRA 2
-#define IW_MODE_MASTER 3
-#define IW_MODE_REPEAT 4
-#define IW_MODE_SECOND 5
-#define IW_MODE_MONITOR 6
-#define IW_MODE_MESH 7
+#define IW_MODE_AUTO	0
+#define IW_MODE_ADHOC	1
+#define IW_MODE_INFRA	2
+#define IW_MODE_MASTER	3
+#define IW_MODE_REPEAT	4
+#define IW_MODE_SECOND	5
+#define IW_MODE_MONITOR	6
+#define IW_MODE_MESH	7
 
 struct iw_quality
 {

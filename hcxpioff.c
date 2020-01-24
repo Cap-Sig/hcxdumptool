@@ -13,6 +13,7 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 
 #include "include/version.h"
 #include "include/rpigpio.h"
@@ -20,6 +21,9 @@
 
 #define HCX_GPIO_BUTTON		1
 #define HCX_GPIO_STATUSLED	2
+#define HCX_TOT			3
+#define HCX_REBOOT		4
+#define HCX_POWER_OFF		5
 #define HCX_HELP		'h'
 #define HCX_VERSION		'v'
 
@@ -29,6 +33,34 @@
 static int gpiostatusled;
 static int gpiobutton;
 static struct timespec sleepled;
+struct timeval tv;
+struct timeval tvtot;
+
+static bool poweroffflag;
+static bool rebootflag;
+/*===========================================================================*/
+__attribute__ ((noreturn))
+static void globalclose()
+{
+if(gpiostatusled > 0) GPIO_SET = 1 << gpiostatusled;
+if(poweroffflag == true)
+	{
+	if(system("poweroff") != 0)
+		{
+		printf("can't power off\n");
+		exit(EXIT_FAILURE);
+		}
+	}
+if(rebootflag == true)
+	{
+	if(system("reboot") != 0)
+		{
+		printf("can't reboot\n");
+		exit(EXIT_FAILURE);
+		}
+	}
+exit(EXIT_SUCCESS);
+}
 /*===========================================================================*/
 static inline size_t chop(char *buffer, size_t len)
 {
@@ -37,15 +69,13 @@ static char *ptr;
 ptr = buffer +len -1;
 while(len)
 	{
-	if (*ptr != '\n')
-		break;
+	if (*ptr != '\n') break;
 	*ptr-- = 0;
 	len--;
 	}
 while(len)
 	{
-	if (*ptr != '\r')
-		break;
+	if (*ptr != '\r') break;
 	*ptr-- = 0;
 	len--;
 	}
@@ -57,11 +87,9 @@ static inline int fgetline(FILE *inputstream, size_t size, char *buffer)
 static size_t len;
 static char *buffptr;
 
-if(feof(inputstream))
-	return -1;
+if(feof(inputstream)) return -1;
 buffptr = fgets (buffer, size, inputstream);
-if(buffptr == NULL)
-	return -1;
+if(buffptr == NULL) return -1;
 len = strlen(buffptr);
 len = chop(buffptr, len);
 return len;
@@ -77,18 +105,14 @@ if(fd_mem < 0)
 	fprintf(stderr, "failed to get device memory\n");
 	return false;
 	}
-
 gpio_map = mmap(NULL, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd_mem, GPIO_BASE +gpioperi);
 close(fd_mem);
-
 if(gpio_map == MAP_FAILED)
 	{
 	fprintf(stderr, "failed to map GPIO memory\n");
 	return false;
 	}
-
 gpio = (volatile unsigned *)gpio_map;
-
 return true;
 }
 /*===========================================================================*/
@@ -100,9 +124,9 @@ static int rpi = 0;
 static int rev = 0;
 static int gpioperibase = 0;
 static char *revptr = NULL;
-static char *revstr = "Revision";
-static char *hwstr = "Hardware";
-static char *snstr = "Serial";
+static const char *revstr = "Revision";
+static const char *hwstr = "Hardware";
+static const char *snstr = "Serial";
 static char linein[128];
 
 fh_rpi = fopen("/proc/cpuinfo", "r");
@@ -113,14 +137,8 @@ if(fh_rpi == NULL)
 	}
 while(1)
 	{
-	if((len = fgetline(fh_rpi, 128, linein)) == -1)
-		{
-		break;
-		}
-	if(len < 15)
-		{
-		continue;
-		}
+	if((len = fgetline(fh_rpi, 128, linein)) == -1) break;
+	if(len < 15) continue;
 	if(memcmp(&linein, hwstr, 8) == 0)
 		{
 		rpi |= 1;
@@ -161,14 +179,8 @@ while(1)
 		rpirevision = strtol(&linein[len -4], &revptr, 16);
 		if((revptr - linein) == len)
 			{
-			if((rpirevision < 0x02) || (rpirevision > 0x15))
-				{
-				continue;
-				}
-			if((rpirevision == 0x11) || (rpirevision == 0x14))
-				{
-				continue;
-				}
+			if((rpirevision < 0x02) || (rpirevision > 0x15)) continue;
+			if((rpirevision == 0x11) || (rpirevision == 0x14)) continue;
 			gpioperibase = GPIO_PERI_BASE_OLD;
 			rpi |= 2;
 			}
@@ -181,11 +193,7 @@ while(1)
 		}
 	}
 fclose(fh_rpi);
-
-if(rpi < 0x7)
-	{
-	return 0;
-	}
+if(rpi < 0x7) return 0;
 return gpioperibase;
 }
 /*===========================================================================*/
@@ -195,7 +203,6 @@ static int gpiobasemem = 0;
 
 sleepled.tv_sec = 0;
 sleepled.tv_nsec = GPIO_LED_DELAY;
-
 if((gpiobutton > 0) || (gpiostatusled > 0))
 	{
 	if(gpiobutton == gpiostatusled)
@@ -219,22 +226,14 @@ if((gpiobutton > 0) || (gpiostatusled > 0))
 		INP_GPIO(gpiostatusled);
 		OUT_GPIO(gpiostatusled);
 		}
-	if(gpiobutton > 0)
-		{
-		INP_GPIO(gpiobutton);
-		}
+	if(gpiobutton > 0) INP_GPIO(gpiobutton);
 	}
-
 return true;
 }
 /*===========================================================================*/
 static void ledflash()
 {
-if(gpiostatusled == 0)
-	{
-	return;
-	}
-
+if(gpiostatusled == 0) return;
 GPIO_SET = 1 << gpiostatusled;
 nanosleep(&sleepled, NULL);
 GPIO_CLR = 1 << gpiostatusled;
@@ -249,42 +248,15 @@ return;
 __attribute__ ((noreturn))
 static void waitloop()
 {
-static int ret = 0;
-static int count = 0;
-
+static int count = 1;
 while(1)
 	{
-	if(GET_GPIO(gpiobutton) > 0)
-		{
-		if(GET_GPIO(gpiobutton) > 0)
-			{
-			if(gpiostatusled > 0)
-				{
-				GPIO_CLR = 1 << gpiostatusled;
-				nanosleep(&sleepled, NULL);
-				GPIO_SET = 1 << gpiostatusled;
-				nanosleep(&sleepled, NULL);
-				GPIO_CLR = 1 << gpiostatusled;
-				nanosleep(&sleepled, NULL);
-				GPIO_SET = 1 << gpiostatusled;
-				nanosleep(&sleepled, NULL);
-				}
-			ret = system("poweroff");
-			if(ret != 0)
-				{
-				puts("poweroff failed!");
-				exit(EXIT_FAILURE);
-				}
-			}
-		}
-	sleep(1);
+	if(GET_GPIO(gpiobutton) > 0) globalclose();
+	gettimeofday(&tv, NULL);
+	if(tv.tv_sec >= tvtot.tv_sec) globalclose();
+	if((count %5) == 0) ledflash();
 	count++;
-	if(count < 5)
-		{
-		continue;
-		}
-	ledflash();
-	count = 0;
+	sleep(1);
 	}
 }
 /*===========================================================================*/
@@ -312,6 +284,10 @@ printf("%s %s (wpi version) (C) %s ZeroBeat\n"
 	"                           default = GPIO not in use\n"
 	"--gpio_statusled=<digit> : Raspberry Pi GPIO number of status LED (2...27)\n"
 	"                           default = GPIO not in use\n"
+	"--tot=<digit>            : enable timeout timer in minutes (minimum = 2 minutes)\n"
+	"                         : hcxpioff will terminate if tot reached\n"
+	"--reboot                 : once hcxpioff terminated, reboot system\n"
+	"                         : default: power off system\n"
 	"--help                   : show this help\n"
 	"--version                : show version\n"
 	"\n"
@@ -334,12 +310,15 @@ int main(int argc, char *argv[])
 {
 static int auswahl;
 static int index;
+static long int totvalue;
 
 static const char *short_options = "hv";
 static const struct option long_options[] =
 {
 	{"gpio_button",		required_argument,	NULL,	HCX_GPIO_BUTTON},
 	{"gpio_statusled",	required_argument,	NULL,	HCX_GPIO_STATUSLED},
+	{"tot",			required_argument,	NULL,	HCX_TOT},
+	{"reboot",		no_argument,		NULL,	HCX_REBOOT},
 	{"version",		no_argument,		NULL,	HCX_VERSION},
 	{"help",		no_argument,		NULL,	HCX_HELP},
 	{NULL,			0,			NULL,	0}
@@ -351,6 +330,10 @@ optind = 1;
 optopt = 0;
 gpiostatusled = 0;
 gpiobutton = 0;
+rebootflag = false;
+poweroffflag = true;
+tvtot.tv_sec = 2147483647L;
+tvtot.tv_usec = 0;
 
 while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) != -1)
 	{
@@ -374,6 +357,22 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 			}
 		break;
 
+		case HCX_TOT:
+		totvalue = strtol(optarg, NULL, 10);
+		if(totvalue < 2)
+			{
+			fprintf(stderr, "tot must be >= 2 (minutes)\n");
+			exit(EXIT_FAILURE);
+			}
+		gettimeofday(&tvtot, NULL);
+		tvtot.tv_sec += totvalue *60;
+		break;
+
+		case HCX_REBOOT:
+		rebootflag = true;
+		poweroffflag = false;
+		break;
+
 		case HCX_HELP:
 		usage(basename(argv[0]));
 		break;
@@ -386,12 +385,6 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 		usageerror(basename(argv[0]));
 		break;
 		}
-	}
-
-if((gpiobutton == 0) && (gpiostatusled == 0))
-	{
-	fprintf(stderr, "no GPIO pin selected\n");
-	exit(EXIT_FAILURE);
 	}
 
 if(globalinit() == false)

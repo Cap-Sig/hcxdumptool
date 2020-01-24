@@ -1,7 +1,7 @@
 hcxdumptool
 ==============
 
-THIS IS THE FORK FOR HCX-PI SETUP.  IT IS THE VERSION REFERENCED IN THE GUIDE: https://cap-sig.com/hcx-pi-v1/
+THIS IS THE FORK FOR HCX-PI SETUP: https://cap-sig.com/hcx-pi-v1/
 
 Small tool to capture packets from wlan devices.
 After capturing, upload the "uncleaned" cap here (https://wpa-sec.stanev.org/?submit)
@@ -36,19 +36,6 @@ make
 make install (as super user)
 ```
 
-
-Compile for Android
---------------
-
-You need:
-* Android NDK installed in your system and in path variable
-
-* This repository cloned with all submodules (`--recursive` flag in `git clone` or `git submodules update` command run)
-
-Just run `ndk-build` - built executables for some architectures should be created inside `libs` directory.
-Copy it to your phone and enjoy.
-
-
 Requirements
 --------------
 
@@ -70,29 +57,7 @@ hcxdumptool need full (monitor mode and full packet injection running all packet
 
 The driver must support monitor mode and full packet injection, as well as ioctl() calls!
 
-Netlink (libnl) interfaces are not supported!
-
-Get information about VENDOR, model, chipset and driver here: https://wikidevi.com
-
-Manufacturers do change chipsets without changing model numbers. Sometimes they add (v)ersion or (rev)vision.
-
-This list is for information purposes only and should not be regarded as a binding presentation of the products:
-
-| VENDOR MODEL         | ID                                                                                |
-| -------------------- | --------------------------------------------------------------------------------- |
-| EDIMAX EW-7711UAN    | ID 7392:7710 Edimax Technology Co., Ltd                                           |
-| ALLNET ALL-WA0150N   | ID 148f:7601 Ralink Technology, Corp. MT7601U Wireless Adapter                    |
-| SEMPRE WU150-1       | ID 148f:7601 Ralink Technology, Corp. MT7601U Wireless Adapter                    |
-| TP-LINK Archer T2UH  | ID 148f:761a Ralink Technology, Corp. MT7610U ("Archer T2U" 2.4G+5G WLAN Adapter) |
-| TENDA W311U+         | ID 148f:3070 Ralink Technology, Corp. RT2870/RT3070 Wireless Adapter              |
-
-Always verify the actual chipset with 'lsusb' and/or 'lspci'!
-
-Due to a bug in xhci subsystem other devices may not work at the moment: https://bugzilla.kernel.org/show_bug.cgi?id=202541
-
-No support for a third party driver which is not part of the official kernel (https://www.kernel.org/)
-
-No support for a driver which doesn't support monitor and packet injection, native - if you need this features, do a request on www.kernel.org
+The build guide uses an Alfa AWUS036NH which used RT3070 chipset.
 
 
 Antennas
